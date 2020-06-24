@@ -1,4 +1,5 @@
 
+
 function GetFlatTriangle(gl) {
     // filled triangle viewed from face down in xy plane,
     return {
@@ -45,7 +46,7 @@ function GetProjectionMatrix() {
 
 function GetAttributes(gl, program) {
     return  {
-        vertexPos: gl.getAttribLocation(program, 'ppos'),
+        vertexPos: gl.getAttribLocation(program, 'aVertexPosition'),
         projectionMatrix: gl.getUniformLocation(program, 'uProjectionMatrix'),
         modelViewMatrix: gl.getUniformLocation(program, 'uModelViewMatrix'),
     }
@@ -121,10 +122,21 @@ function MakeObject(gl, program, obj) {
     var attrs = GetAttributes(gl, program)
     var vertexpos = attrs.vertexPos;
     var vbuffer = gl.createBuffer();
+
+    var projMatAttr = attrs.projectionMatrix;
+    var modelViewAttr = attrs.modelViewMatrix;
+
+    var projectionMatrix = GetProjectionMatrix();
+    var modelViewMatrix = GetModelViewMatrix();
+
     gl.bindBuffer(gl.ARRAY_BUFFER, vbuffer);
     gl.bufferData(gl.ARRAY_BUFFER, obj.vertices, gl.STATIC_DRAW);
     gl.vertexAttribPointer(vertexpos, obj.verticesDim, gl.FLOAT, false, 0, 0);
     gl.enableVertexAttribArray(vertexpos);
+    gl.uniformMatrix4fv(projMatAttr, false, projectionMatrix);
+    gl.uniformMatrix4fv(modelViewAttr, false, modelViewMatrix);
+
+
     gl.drawArrays(obj.primtype, 0, obj.nVertices);
     gl.flush()
 }
@@ -146,21 +158,7 @@ void main(void) {
 
 function MakeVertexShader(gl, obj) {
     var vshader = gl.createShader(gl.VERTEX_SHADER);
-    var cVShader = `
-attribute vec2 ppos;
-void main(void) {
-  gl_Position = vec4(ppos.x, ppos.y, ${obj.zpos}, ${obj.lambda});
-}
-    `
-    gl.shaderSource(vshader, cVShader);
-    gl.compileShader(vshader);
-    if (!gl.getShaderParameter(vshader, gl.COMPILE_STATUS)) {
-        alert('Error during vertex shader compilation:\n' + gl.getShaderInfoLog(vshader));
-    }
-    return vshader;
-}
-
-const vsSource = `
+    const vsSource = `
     attribute vec4 aVertexPosition;
 
     uniform mat4 uModelViewMatrix;
@@ -170,3 +168,10 @@ const vsSource = `
       gl_Position = uProjectionMatrix * uModelViewMatrix * aVertexPosition;
     }
   `;
+    gl.shaderSource(vshader, vsSource);
+    gl.compileShader(vshader);
+    if (!gl.getShaderParameter(vshader, gl.COMPILE_STATUS)) {
+        alert('Error during vertex shader compilation:\n' + gl.getShaderInfoLog(vshader));
+    }
+    return vshader;
+}
