@@ -9,7 +9,7 @@ function GetFlatTriangle() {
         // triangles created by each disjoint sequence of 3 vertices
         // in this case only 1 triangle
         primtype: gl.TRIANGLES,
-        fragColor: [1.0, 1.0, 1.0, 1.0],
+        fragColor: [1.0, 1.0, 1.0, 1.0], // white pixels
         zpos:  0.0, // specified in homogeneous coordinates
         lambda: 1.0, // specified in homogeneous coordinates
     }
@@ -22,10 +22,26 @@ function GetFlatSquare() {
         verticesDim: 2,
         nVertices: 4,
         primtype: gl.TRIANGLE_STRIP,
-        fragColor: [1.0, 1.0, 1.0, 1.0],
+        fragColor: [1.0, 1.0, 1.0, 1.0], // white pixels
         zpos:  0.0, // specified in homogeneous coordinates
         lambda: 1.0, // specified in homogeneous coordinates
     }
+}
+
+function GetModelViewMatrix() {
+    return new Float32Array(
+        [1, 0, 0, 0,
+            0, 1, 0, 0,
+            0, 0, 1, 0,
+            0, 0, -3.333, 1]);
+}
+
+function GetProjectionMatrix() {
+    return new Float32Array(
+        [2.41421, 0, 0, 0,
+            0, 2.41421, 0, 0,
+            0, 0, -1.002002, -1,
+            0, 0, -0.2002002, 0]);
 }
 
 function DarkBlueBackground() {
@@ -39,22 +55,37 @@ function BlackBackground() {
 }
 
 function Start() {
+    var canvasId1 = "glcanvas1";
+    execCanvas(canvasId1);
+    var obj1 = GetFlatSquare();
+    execObj(obj1);
 
-    var canvas = document.getElementById("glcanvas");
+    var canvasId2 = "glcanvas2";
+    execCanvas(canvasId2);
+    var obj2 = GetFlatTriangle();
+    execObj(obj2);
+}
+
+function makeContext(canvas) {
     gl = null;
     try {
         gl = canvas.getContext('experimental-webgl');
     } catch (e) {
         alert('exception: ' + e.toString());
     }
-    if (!gl) { alert('unable to create webgl context'); return; }
+    if (!gl) { alert('unable to create webgl context'); }
+
+}
+
+function execCanvas(canvasId) {
+    var canvas = document.getElementById(canvasId);
+    makeContext(canvas);
     DarkBlueBackground();
+}
 
-    var obj = GetFlatSquare();
+function execObj(obj) {
     var program = CreateLinkValidate(obj);
-
     MakeObjects(program, obj);
-
 }
 
 function CreateLinkValidate(obj) {
@@ -118,8 +149,7 @@ function MakeVertexShader(obj) {
     var vshader = gl.createShader(gl.VERTEX_SHADER);
     var cVShader = `
 attribute vec2 ppos;
-void main(void)
-{
+void main(void) {
   gl_Position = vec4(ppos.x, ppos.y, ${obj.zpos}, ${obj.lambda});
 }
     `
@@ -131,4 +161,11 @@ void main(void)
     return vshader;
 }
 
-
+var cVShader = `
+attribute vec3 vertexPos;
+uniform mat4 modelViewMatrix;
+uniform mat4 projectionMatrix;
+void main(void) {
+    
+}
+`
