@@ -2,12 +2,12 @@ let gl;
 
 function GetFlatTriangle() {
     // filled triangle viewed from face down in xy plane,
-// triangles created by each disjoint sequence of 3 vertices
-// in this case only 1 triangle
     return {
         vertices:  new Float32Array([0.0,0.5,-0.5,-0.5,0.5,-0.5]),
         verticesDim: 2,
         nVertices: 3,
+        // triangles created by each disjoint sequence of 3 vertices
+        // in this case only 1 triangle
         primtype: gl.TRIANGLES,
         fragColor: [1.0, 1.0, 1.0, 1.0],
         zpos:  0.0, // specified in homogeneous coordinates
@@ -15,6 +15,28 @@ function GetFlatTriangle() {
     }
 }
 
+function GetFlatSquare() {
+    return {
+        // TL, TR, BL, BR
+        vertices: new Float32Array([-0.5, 0.5, 0.5, 0.5, -0.5, -0.5, 0.5, -0.5]),
+        verticesDim: 2,
+        nVertices: 4,
+        primtype: gl.TRIANGLE_STRIP,
+        fragColor: [1.0, 1.0, 1.0, 1.0],
+        zpos:  0.0, // specified in homogeneous coordinates
+        lambda: 1.0, // specified in homogeneous coordinates
+    }
+}
+
+function DarkBlueBackground() {
+    gl.clearColor(0.0, 0.0, 0.5, 1.0);
+    gl.clear(gl.COLOR_BUFFER_BIT);
+}
+
+function BlackBackground() {
+    gl.clearColor(0.0, 0.0, 0.0, 1.0);
+    gl.clear(gl.COLOR_BUFFER_BIT);
+}
 
 function Start() {
 
@@ -26,10 +48,9 @@ function Start() {
         alert('exception: ' + e.toString());
     }
     if (!gl) { alert('unable to create webgl context'); return; }
-    gl.clearColor(0.0, 0.0, 0.5, 1.0);
-    gl.clear(gl.COLOR_BUFFER_BIT);
+    DarkBlueBackground();
 
-    var obj = GetFlatTriangle();
+    var obj = GetFlatSquare();
     var program = CreateLinkValidate(obj);
 
     MakeObjects(program, obj);
