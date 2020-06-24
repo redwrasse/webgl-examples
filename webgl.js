@@ -44,6 +44,8 @@ function GetProjectionMatrix() {
             0, 0, -0.2002002, 0]);
 }
 
+
+
 function DarkBlueBackground() {
     gl.clearColor(0.0, 0.0, 0.5, 1.0);
     gl.clear(gl.COLOR_BUFFER_BIT);
@@ -54,7 +56,7 @@ function BlackBackground() {
     gl.clear(gl.COLOR_BUFFER_BIT);
 }
 
-function Start() {
+function main() {
     var canvasId1 = "glcanvas1";
     execCanvas(canvasId1);
     var obj1 = GetFlatSquare();
@@ -65,6 +67,7 @@ function Start() {
     var obj2 = GetFlatTriangle();
     execObj(obj2);
 }
+window.onload = main;
 
 function makeContext(canvas) {
     gl = null;
@@ -115,6 +118,8 @@ function MakeObjects(program, obj) {
     gl.flush()
 }
 
+
+
 function MakeObj(obj, vattrib) {
     gl.bufferData(gl.ARRAY_BUFFER, obj.vertices, gl.STATIC_DRAW);
     gl.vertexAttribPointer(vattrib, obj.verticesDim, gl.FLOAT, false, 0, 0);
@@ -161,11 +166,13 @@ void main(void) {
     return vshader;
 }
 
-var cVShader = `
-attribute vec3 vertexPos;
-uniform mat4 modelViewMatrix;
-uniform mat4 projectionMatrix;
-void main(void) {
-    
-}
-`
+const vsSource = `
+    attribute vec4 aVertexPosition;
+
+    uniform mat4 uModelViewMatrix;
+    uniform mat4 uProjectionMatrix;
+
+    void main() {
+      gl_Position = uProjectionMatrix * uModelViewMatrix * aVertexPosition;
+    }
+  `;
