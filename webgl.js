@@ -28,6 +28,20 @@ function GetFlatSquare(gl) {
     }
 }
 
+function getTransformationMatrix(rx, ry, rz)
+{
+    // Pre-computes trigonometric values (mainly for better readability)
+    var cx = Math.cos(rx), sx = Math.sin(rx);
+    var cy = Math.cos(ry), sy = Math.sin(ry);
+    var cz = Math.cos(rz), sz = Math.sin(rz);
+
+    // Returns matrix
+    return new Float32Array([cy*cz, (sx*sy*cz-cx*sz), (sx*sz+cx*sy*cz), 0,
+        cy*sz, (sx*sy*sz+cx*cz), (cx*sy*sz-sx*cz), 0,
+        -sy,   sx*cy,            cx*cy,            0,
+        0,     0,                0,                1]);
+}
+
 function GetModelViewMatrix() {
     return new Float32Array(
         [1, 0, 0, 0,
@@ -67,13 +81,41 @@ function main() {
     var canvasId1 = "glcanvas1";
     var gl1 = execCanvas(canvasId1);
     var obj1 = GetFlatSquare(gl1);
-    execObj(gl1, obj1);
+    var program1 = execObj(gl1, obj1);
 
     var canvasId2 = "glcanvas2";
     var gl2 = execCanvas(canvasId2);
     var obj2 = GetFlatTriangle(gl2);
-    execObj(gl2, obj2);
+    var program2 = execObj(gl2, obj2);
+
+    function render(now) {
+        refreshCanvas(gl1, obj1, program1, canvasId1, now);
+        refreshCanvas(gl2, obj2, program2, canvasId2, now);
+        requestAnimationFrame(render);
+    }
+    requestAnimationFrame(render);
+
 }
+
+function refreshCanvas(gl, obj, program, id, t) {
+    const speed = 1.5 / 1000.;
+    t *= speed;
+    if (!gl) {
+        return;
+    }
+    DarkBlueBackground(gl);
+    var attrs = GetAttributes(gl, program)
+    var modelViewAttr = attrs.modelViewMatrix;
+    period = 2 * Math.PI;
+    var mat = getTransformationMatrix(t % period, 0.5 * t % period, 0);
+    gl.uniformMatrix4fv(modelViewAttr, false, mat);
+    gl.drawArrays(obj.primtype, 0, obj.nVertices);
+    gl.flush();
+    //console.log(`refreshed ${id} at ${t}`);
+}
+
+
+
 window.onload = main;
 
 function makeContext(canvas) {
@@ -97,6 +139,7 @@ function execCanvas(canvasId) {
 function execObj(gl, obj) {
     var program = CreateLinkValidate(gl, obj);
     MakeObject(gl, program, obj);
+    return program;
 }
 
 function CreateLinkValidate(gl, obj) {
@@ -119,6 +162,7 @@ function CreateLinkValidate(gl, obj) {
 }
 
 function MakeObject(gl, program, obj) {
+
     var attrs = GetAttributes(gl, program)
     var vertexpos = attrs.vertexPos;
     var vbuffer = gl.createBuffer();
@@ -127,14 +171,15 @@ function MakeObject(gl, program, obj) {
     var modelViewAttr = attrs.modelViewMatrix;
 
     var projectionMatrix = GetProjectionMatrix();
-    var modelViewMatrix = GetModelViewMatrix();
+
+
 
     gl.bindBuffer(gl.ARRAY_BUFFER, vbuffer);
     gl.bufferData(gl.ARRAY_BUFFER, obj.vertices, gl.STATIC_DRAW);
     gl.vertexAttribPointer(vertexpos, obj.verticesDim, gl.FLOAT, false, 0, 0);
     gl.enableVertexAttribArray(vertexpos);
     gl.uniformMatrix4fv(projMatAttr, false, projectionMatrix);
-    gl.uniformMatrix4fv(modelViewAttr, false, modelViewMatrix);
+    gl.uniformMatrix4fv(modelViewAttr, false, projectionMatrix);
 
 
     gl.drawArrays(obj.primtype, 0, obj.nVertices);
@@ -165,8 +210,8 @@ function MakeVertexShader(gl, obj) {
     uniform mat4 uProjectionMatrix;
 
     void main() {
-      gl_Position = uProjectionMatrix * uModelViewMatrix * aVertexPosition;
-    }
+      gl_Position = uModelViewMatrix * vec4(aVertexPosition.x, aVertexPosition.y, 0.0, 1.0);
+    }   
   `;
     gl.shaderSource(vshader, vsSource);
     gl.compileShader(vshader);
