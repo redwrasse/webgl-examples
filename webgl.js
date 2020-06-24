@@ -1,6 +1,5 @@
-let gl;
 
-function GetFlatTriangle() {
+function GetFlatTriangle(gl) {
     // filled triangle viewed from face down in xy plane,
     return {
         vertices:  new Float32Array([0.0,0.5,-0.5,-0.5,0.5,-0.5]),
@@ -15,7 +14,7 @@ function GetFlatTriangle() {
     }
 }
 
-function GetFlatSquare() {
+function GetFlatSquare(gl) {
     return {
         // TL, TR, BL, BR
         vertices: new Float32Array([-0.5, 0.5, 0.5, 0.5, -0.5, -0.5, 0.5, -0.5]),
@@ -46,55 +45,56 @@ function GetProjectionMatrix() {
 
 
 
-function DarkBlueBackground() {
+function DarkBlueBackground(gl) {
     gl.clearColor(0.0, 0.0, 0.5, 1.0);
     gl.clear(gl.COLOR_BUFFER_BIT);
 }
 
-function BlackBackground() {
+function BlackBackground(gl) {
     gl.clearColor(0.0, 0.0, 0.0, 1.0);
     gl.clear(gl.COLOR_BUFFER_BIT);
 }
 
 function main() {
     var canvasId1 = "glcanvas1";
-    execCanvas(canvasId1);
-    var obj1 = GetFlatSquare();
-    execObj(obj1);
+    var gl1 = execCanvas(canvasId1);
+    var obj1 = GetFlatSquare(gl1);
+    execObj(gl1, obj1);
 
     var canvasId2 = "glcanvas2";
-    execCanvas(canvasId2);
-    var obj2 = GetFlatTriangle();
-    execObj(obj2);
+    var gl2 = execCanvas(canvasId2);
+    var obj2 = GetFlatTriangle(gl2);
+    execObj(gl2, obj2);
 }
 window.onload = main;
 
 function makeContext(canvas) {
-    gl = null;
+    let gl;
     try {
         gl = canvas.getContext('experimental-webgl');
     } catch (e) {
         alert('exception: ' + e.toString());
     }
     if (!gl) { alert('unable to create webgl context'); }
-
+    return gl;
 }
 
 function execCanvas(canvasId) {
     var canvas = document.getElementById(canvasId);
-    makeContext(canvas);
-    DarkBlueBackground();
+    let gl = makeContext(canvas);
+    DarkBlueBackground(gl);
+    return gl;
 }
 
-function execObj(obj) {
-    var program = CreateLinkValidate(obj);
-    MakeObjects(program, obj);
+function execObj(gl, obj) {
+    var program = CreateLinkValidate(gl, obj);
+    MakeObjects(gl, program, obj);
 }
 
-function CreateLinkValidate(obj) {
+function CreateLinkValidate(gl, obj) {
     var program = gl.createProgram();
-    var fshader = MakeFragmentShader(obj);
-    var vshader = MakeVertexShader(obj);
+    var fshader = MakeFragmentShader(gl, obj);
+    var vshader = MakeVertexShader(gl, obj);
 
     gl.attachShader(program, fshader);
     gl.attachShader(program, vshader);
@@ -110,23 +110,23 @@ function CreateLinkValidate(obj) {
     return program;
 }
 
-function MakeObjects(program, obj) {
-    var vattrib = GetAttributeVar(program);
+function MakeObjects(gl, program, obj) {
+    var vattrib = GetAttributeVar(gl, program);
     var vbuffer = gl.createBuffer();
     gl.bindBuffer(gl.ARRAY_BUFFER, vbuffer);
-    MakeObj(obj, vattrib);
+    MakeObj(gl, obj, vattrib);
     gl.flush()
 }
 
 
 
-function MakeObj(obj, vattrib) {
+function MakeObj(gl, obj, vattrib) {
     gl.bufferData(gl.ARRAY_BUFFER, obj.vertices, gl.STATIC_DRAW);
     gl.vertexAttribPointer(vattrib, obj.verticesDim, gl.FLOAT, false, 0, 0);
     gl.drawArrays(obj.primtype, 0, obj.nVertices);
 }
 
-function GetAttributeVar(program) {
+function GetAttributeVar(gl, program) {
     // Gets address of the input 'attribute' of the vertex shader
     var vattrib = gl.getAttribLocation(program, 'ppos');
     if(vattrib === -1)
@@ -135,7 +135,7 @@ function GetAttributeVar(program) {
     return vattrib;
 }
 
-function MakeFragmentShader(obj) {
+function MakeFragmentShader(gl, obj) {
     var fshader = gl.createShader(gl.FRAGMENT_SHADER);
     var cShader = `
 void main(void) {
@@ -150,7 +150,7 @@ void main(void) {
     return fshader;
 }
 
-function MakeVertexShader(obj) {
+function MakeVertexShader(gl, obj) {
     var vshader = gl.createShader(gl.VERTEX_SHADER);
     var cVShader = `
 attribute vec2 ppos;
