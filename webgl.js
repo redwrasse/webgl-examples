@@ -1,4 +1,24 @@
 
+// LINE_STRIP: the two first vertices delimit the ends of the first segment, and each new vertex defines the end of a new segment starting at the end of the previous one
+// LINE_LOOP: same as LINE_STRIP with an additional segment between the first and last vertices (closing the contiguous segments set)
+// LINE: pairs of vertices delimit the ends of each individual segment (giving a non-contiguous set of segments)
+
+
+function Tetrahedron(gl) {
+    var a = [0.0, 0.0, 0.0];
+    var b = [0.9, 0.0, 0.0];
+    var c = [0.0, 0.9, 0.0];
+    var d = [0.0, 0.0, 0.9];
+    return {
+        vertices: new Float32Array(
+            a.concat(b, c, d, a, b, d, c, a, d),
+        ),
+        verticesDim: 3,
+        nVertices: 10,
+        primtype: gl.LINE_STRIP,
+        fragColor: [1.0, 1.0, 1.0, 1.0], // white pixels
+    }
+}
 
 function GetFlatTriangle(gl) {
     // filled triangle viewed from face down in xy plane,
@@ -10,8 +30,6 @@ function GetFlatTriangle(gl) {
         // in this case only 1 triangle
         primtype: gl.TRIANGLES,
         fragColor: [1.0, 1.0, 1.0, 1.0], // white pixels
-        zpos:  0.0, // specified in homogeneous coordinates
-        lambda: 1.0, // specified in homogeneous coordinates
     }
 }
 
@@ -23,8 +41,6 @@ function GetFlatSquare(gl) {
         nVertices: 4,
         primtype: gl.TRIANGLE_STRIP,
         fragColor: [1.0, 1.0, 1.0, 1.0], // white pixels
-        zpos:  0.0, // specified in homogeneous coordinates
-        lambda: 1.0, // specified in homogeneous coordinates
     }
 }
 
@@ -66,7 +82,6 @@ function GetAttributes(gl, program) {
     }
 }
 
-
 function DarkBlueBackground(gl) {
     gl.clearColor(0.0, 0.0, 0.5, 1.0);
     gl.clear(gl.COLOR_BUFFER_BIT);
@@ -85,12 +100,18 @@ function main() {
 
     var canvasId2 = "glcanvas2";
     var gl2 = execCanvas(canvasId2);
-    var obj2 = GetFlatTriangle(gl2);
+    var obj2 = Tetrahedron(gl2);
     var program2 = execObj(gl2, obj2);
+
+    var canvasId3 = "glcanvas3";
+    var gl3 = execCanvas(canvasId3);
+    var obj3 =  GetFlatTriangle(gl3);
+    var program3 = execObj(gl3, obj3);
 
     function render(now) {
         refreshCanvas(gl1, obj1, program1, canvasId1, now);
         refreshCanvas(gl2, obj2, program2, canvasId2, now);
+        refreshCanvas(gl3, obj3, program3, canvasId2, now);
         requestAnimationFrame(render);
     }
     requestAnimationFrame(render);
@@ -98,7 +119,7 @@ function main() {
 }
 
 function refreshCanvas(gl, obj, program, id, t) {
-    const speed = 1.5 / 1000.;
+    const speed = 1. / 1000.;
     t *= speed;
     if (!gl) {
         return;
@@ -107,13 +128,12 @@ function refreshCanvas(gl, obj, program, id, t) {
     var attrs = GetAttributes(gl, program)
     var modelViewAttr = attrs.modelViewMatrix;
     period = 2 * Math.PI;
-    var mat = getTransformationMatrix(t % period, 0.5 * t % period, 0);
+    var mat = getTransformationMatrix(t % period, 0.7 * t % period, 0.2 * t % period);
     gl.uniformMatrix4fv(modelViewAttr, false, mat);
     gl.drawArrays(obj.primtype, 0, obj.nVertices);
     gl.flush();
     //console.log(`refreshed ${id} at ${t}`);
 }
-
 
 
 window.onload = main;
@@ -171,15 +191,14 @@ function MakeObject(gl, program, obj) {
     var modelViewAttr = attrs.modelViewMatrix;
 
     var projectionMatrix = GetProjectionMatrix();
-
-
+    var modelViewMatrix = GetModelViewMatrix();
 
     gl.bindBuffer(gl.ARRAY_BUFFER, vbuffer);
     gl.bufferData(gl.ARRAY_BUFFER, obj.vertices, gl.STATIC_DRAW);
     gl.vertexAttribPointer(vertexpos, obj.verticesDim, gl.FLOAT, false, 0, 0);
     gl.enableVertexAttribArray(vertexpos);
     gl.uniformMatrix4fv(projMatAttr, false, projectionMatrix);
-    gl.uniformMatrix4fv(modelViewAttr, false, projectionMatrix);
+    gl.uniformMatrix4fv(modelViewAttr, false, modelViewMatrix);
 
 
     gl.drawArrays(obj.primtype, 0, obj.nVertices);
@@ -210,7 +229,7 @@ function MakeVertexShader(gl, obj) {
     uniform mat4 uProjectionMatrix;
 
     void main() {
-      gl_Position = uModelViewMatrix * vec4(aVertexPosition.x, aVertexPosition.y, 0.0, 1.0);
+      gl_Position = uModelViewMatrix * vec4(aVertexPosition.x, aVertexPosition.y, aVertexPosition.z, 1.0);
     }   
   `;
     gl.shaderSource(vshader, vsSource);
