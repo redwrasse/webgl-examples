@@ -43,6 +43,13 @@ function GetProjectionMatrix() {
             0, 0, -0.2002002, 0]);
 }
 
+function GetAttributes(gl, program) {
+    return  {
+        vertexPos: gl.getAttribLocation(program, 'ppos'),
+        projectionMatrix: gl.getUniformLocation(program, 'uProjectionMatrix'),
+        modelViewMatrix: gl.getUniformLocation(program, 'uModelViewMatrix'),
+    }
+}
 
 
 function DarkBlueBackground(gl) {
@@ -88,7 +95,7 @@ function execCanvas(canvasId) {
 
 function execObj(gl, obj) {
     var program = CreateLinkValidate(gl, obj);
-    MakeObjects(gl, program, obj);
+    MakeObject(gl, program, obj);
 }
 
 function CreateLinkValidate(gl, obj) {
@@ -110,29 +117,16 @@ function CreateLinkValidate(gl, obj) {
     return program;
 }
 
-function MakeObjects(gl, program, obj) {
-    var vattrib = GetAttributeVar(gl, program);
+function MakeObject(gl, program, obj) {
+    var attrs = GetAttributes(gl, program)
+    var vertexpos = attrs.vertexPos;
     var vbuffer = gl.createBuffer();
     gl.bindBuffer(gl.ARRAY_BUFFER, vbuffer);
-    MakeObj(gl, obj, vattrib);
-    gl.flush()
-}
-
-
-
-function MakeObj(gl, obj, vattrib) {
     gl.bufferData(gl.ARRAY_BUFFER, obj.vertices, gl.STATIC_DRAW);
-    gl.vertexAttribPointer(vattrib, obj.verticesDim, gl.FLOAT, false, 0, 0);
+    gl.vertexAttribPointer(vertexpos, obj.verticesDim, gl.FLOAT, false, 0, 0);
+    gl.enableVertexAttribArray(vertexpos);
     gl.drawArrays(obj.primtype, 0, obj.nVertices);
-}
-
-function GetAttributeVar(gl, program) {
-    // Gets address of the input 'attribute' of the vertex shader
-    var vattrib = gl.getAttribLocation(program, 'ppos');
-    if(vattrib === -1)
-    {alert('Error during attribute address retrieval');return;}
-    gl.enableVertexAttribArray(vattrib);
-    return vattrib;
+    gl.flush()
 }
 
 function MakeFragmentShader(gl, obj) {
