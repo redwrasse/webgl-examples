@@ -1,4 +1,5 @@
 
+To do: more sophisticated examples following https://www.redwrasse.io/notes/webglandcomputergraphics
 ### Screenshot
 ![](./webgl.gif)
 
