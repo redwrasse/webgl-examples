@@ -1,5 +1,9 @@
 
 To do: more sophisticated examples following https://www.redwrasse.io/notes/webglandcomputergraphics
+
+### Run
+[Launch in browser](https://github.com/redwrasse/webgl-examples)
+
 ### Screenshot
 ![](./webgl.gif)
 
