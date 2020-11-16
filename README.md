@@ -2,7 +2,7 @@
 To do: more sophisticated examples following https://www.redwrasse.io/notes/webglandcomputergraphics
 
 ### Run
-[Launch in browser](https://github.com/redwrasse/webgl-examples)
+[Launch in browser](https://redwrasse.github.io/webgl-examples/)
 
 ### Screenshot
 ![](./webgl.gif)
